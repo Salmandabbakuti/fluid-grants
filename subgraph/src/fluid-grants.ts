@@ -1,63 +1,62 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import { BigInt } from "@graphprotocol/graph-ts";
 import {
-  FluidGrants,
-  GrantCreated,
-  GrantDistributed,
-  ProjectSubmitted,
-  ProjectVoted
-} from "../generated/FluidGrants/FluidGrants"
-import { ExampleEntity } from "../generated/schema"
+  GrantCreated as GrantCreatedEvent,
+  GrantDistributed as GrantDistributedEvent,
+  ProjectSubmitted as ProjectSubmittedEvent,
+  ProjectVoted as ProjectVotedEvent
+} from "../generated/FluidGrants/FluidGrants";
+import { Grant, Project } from "../generated/schema";
 
-export function handleGrantCreated(event: GrantCreated): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from)
-
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from)
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
-  }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
-  entity.FluidGrants_id = event.params.id
-  entity.name = event.params.name
-
-  // Entities can be written to the store with `.save()`
-  entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.grantCount(...)
-  // - contract.grantProjectCount(...)
-  // - contract.grants(...)
-  // - contract.hasSubmittedToGrant(...)
-  // - contract.isProjectInGrant(...)
-  // - contract.projectCount(...)
-  // - contract.projects(...)
+export function handleGrantCreated(event: GrantCreatedEvent): void {
+  const grant = new Grant(event.params.id.toString());
+  grant.name = event.params.name;
+  grant.description = event.params.description;
+  grant.externalUrl = event.params.externalUrl;
+  grant.amount = event.params.amount;
+  grant.submissionStartsAt = event.params.submissionStartsAt;
+  grant.submissionEndsAt = event.params.submissionEndsAt;
+  grant.judgingStartsAt = event.params.judgingStartsAt;
+  grant.judgingEndsAt = event.params.judgingEndsAt;
+  grant.distributionToken = event.params.distributionToken;
+  grant.distributionPool = event.params.pool;
+  grant.status = "ACTIVE";
+  grant.createdAt = event.block.timestamp;
+  grant.updatedAt = event.block.timestamp;
+  grant.save();
 }
 
-export function handleGrantDistributed(event: GrantDistributed): void {}
+export function handleGrantDistributed(event: GrantDistributedEvent): void {
+  const grant = Grant.load(event.params.grantId.toString());
+  if (grant) {
+    grant.status = "COMPLETED";
+    grant.updatedAt = event.block.timestamp;
+    grant.save();
+  }
+}
 
-export function handleProjectSubmitted(event: ProjectSubmitted): void {}
+export function handleProjectSubmitted(event: ProjectSubmittedEvent): void {
+  const project = new Project(
+    event.params.grantId.toString() + "-" + event.params.id.toString()
+  );
+  project.name = event.params.name;
+  project.description = event.params.description;
+  project.repositoryUrl = event.params.repositoryUrl;
+  project.demoUrl = event.params.demoUrl;
+  project.walletAddress = event.params.walletAddress;
+  project.votes = BigInt.fromI32(0);
+  project.grant = event.params.grantId.toString();
+  project.createdAt = event.block.timestamp;
+  project.updatedAt = event.block.timestamp;
+  project.save();
+}
 
-export function handleProjectVoted(event: ProjectVoted): void {}
+export function handleProjectVoted(event: ProjectVotedEvent): void {
+  const project = Project.load(
+    event.params.grantId.toString() + "-" + event.params.projectId.toString()
+  );
+  if (project) {
+    project.votes = event.params.votes;
+    project.updatedAt = event.block.timestamp;
+    project.save();
+  }
+}

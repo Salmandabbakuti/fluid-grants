@@ -1,6 +1,36 @@
-type ExampleEntity @entity {
-  id: Bytes!
-  count: BigInt!
-  id: BigInt! # uint256
+enum GrantStatus {
+  ACTIVE
+  JUDGING
+  COMPLETED
+}
+
+type Grant @entity {
+  id: ID!
   name: String! # string
+  description: String! # string
+  externalUrl: String! # string
+  amount: BigInt! # int
+  submissionStartsAt: BigInt! # int
+  submissionEndsAt: BigInt! # int
+  judgingStartsAt: BigInt! # int
+  judgingEndsAt: BigInt! # int
+  distributionToken:Bytes!
+  distributionPool:Bytes!
+  projects: [Project!]! @derivedFrom(field: "grant")
+  status: GrantStatus! # enum
+  createdAt: BigInt! # int
+  updatedAt: BigInt! # int
+}
+
+type Project @entity {
+  id: ID!
+  name: String! # string
+  description: String! # string
+  repositoryUrl: String! # string
+  demoUrl: String! # string
+  walletAddress: Bytes!
+  votes: BigInt! # int
+  grant: Grant!
+  createdAt: BigInt! # int
+  updatedAt: BigInt! # int
 }
