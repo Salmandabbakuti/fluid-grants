@@ -3,14 +3,12 @@ pragma solidity 0.8.24;
 
 import {ISuperToken} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import {ISuperfluidPool} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
-import {SuperTokenV1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
-import "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
+import {SuperTokenV1Library, PoolConfig} from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
 contract FluidGrants {
     using SuperTokenV1Library for ISuperToken;
 
     uint256 public grantCount;
-    uint256 public projectCount;
 
     struct Grant {
         uint256 id;
@@ -70,13 +68,11 @@ contract FluidGrants {
 
     event GrantDistributed(uint256 grantId, uint256 amount);
 
-    mapping(uint256 grantId => Grant) public grants;
-    mapping(uint256 projectId => Project) public projects;
-    mapping(uint256 grantId => uint256 count) public grantProjectCount;
-    mapping(uint256 grantId => mapping(address user => bool hasSubmitted))
-        public hasSubmittedToGrant;
-    mapping(uint256 grantId => mapping(uint256 projectId => bool))
-        public isProjectInGrant;
+    mapping(uint256 => Grant) public grants;
+    mapping(uint256 => Project) public projects;
+    mapping(uint256 => uint256) public grantProjectCount;
+    mapping(uint256 => mapping(address => bool)) public hasSubmittedToGrant;
+    mapping(uint256 => mapping(uint256 => bool)) public isProjectInGrant;
 
     function createGrant(
         string memory _name,
@@ -151,7 +147,7 @@ contract FluidGrants {
         Grant memory grant = grants[_grantId];
         require(grant.isActive, "Grant is not active");
         require(
-            block.timestamp >= grant.submissionStartsAt ||
+            block.timestamp >= grant.submissionStartsAt &&
                 block.timestamp <= grant.submissionEndsAt,
             "Grant is not in submission period"
         );
@@ -159,8 +155,6 @@ contract FluidGrants {
             !hasSubmittedToGrant[_grantId][msg.sender],
             "You have already submitted a project to this grant"
         );
-        ISuperToken token = grant.distributionToken;
-        ISuperfluidPool pool = grant.pool;
         uint256 projectId = grantProjectCount[_grantId]++;
         projects[projectId] = Project({
             id: projectId,
@@ -194,7 +188,7 @@ contract FluidGrants {
         require(project.walletAddress != address(0), "Project does not exist");
         require(grant.isActive, "Grant is not active");
         require(
-            block.timestamp >= grant.judgingStartsAt ||
+            block.timestamp >= grant.judgingStartsAt &&
                 block.timestamp <= grant.judgingEndsAt,
             "Grant is not in judging period"
         );

@@ -8,9 +8,9 @@ dataSources:
     name: FluidGrants
     network: sepolia
     source:
-      address: "0xDe1EdD357001273Cd6415B225831bf636d0Ac710"
+      address: "0xecd65f216559427cd681ed09c6c484eedee1839a"
       abi: FluidGrants
-      startBlock: 6725519
+      startBlock: 6744543
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
