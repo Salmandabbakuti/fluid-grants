@@ -173,7 +173,6 @@ contract FluidGrants {
         });
         hasSubmittedToGrant[_grantId][msg.sender] = true;
         isProjectInGrant[_grantId][projectId] = true;
-        token.connectPool(pool);
         emit ProjectSubmitted(
             projectId,
             _grantId,
@@ -208,5 +207,20 @@ contract FluidGrants {
         ISuperfluidPool pool = grant.pool;
         token.updateMemberUnits(pool, project.walletAddress, _votes);
         emit ProjectVoted(_projectId, _grantId, _votes, msg.sender);
+    }
+
+    function claimGrant(uint256 _grantId) external {
+        Grant memory grant = grants[_grantId];
+        require(
+            hasSubmittedToGrant[_grantId][msg.sender],
+            "You have not submitted a project to this grant"
+        );
+        require(
+            block.timestamp >= grant.judgingEndsAt,
+            "Grant projects judging is not over"
+        );
+        ISuperToken token = grant.distributionToken;
+        ISuperfluidPool pool = grant.pool;
+        token.claimAll(pool, msg.sender);
     }
 }
