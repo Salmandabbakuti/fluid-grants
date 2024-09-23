@@ -1,0 +1,35 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: FluidGrants
+    network: sepolia
+    source:
+      address: "0xDe1EdD357001273Cd6415B225831bf636d0Ac710"
+      abi: FluidGrants
+      startBlock: 6725519
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - GrantCreated
+        - GrantDistributed
+        - ProjectSubmitted
+        - ProjectVoted
+      abis:
+        - name: FluidGrants
+          file: ./abis/FluidGrants.json
+      eventHandlers:
+        - event: GrantCreated(uint256,string,string,string,uint256,uint256,uint256,uint256,uint256,address,address)
+          handler: handleGrantCreated
+        - event: GrantDistributed(uint256,uint256)
+          handler: handleGrantDistributed
+        - event: ProjectSubmitted(uint256,uint256,string,string,string,string,address)
+          handler: handleProjectSubmitted
+        - event: ProjectVoted(uint256,uint256,uint256,address)
+          handler: handleProjectVoted
+      file: ./src/fluid-grants.ts
